@@ -5,8 +5,8 @@ import jobRouter from "./routes/job.route";
 const app = express(); // create an express app
 
 const allowedOrigins = [
-  "http://localhost:5000",
-  "https://job-tracker-steven0710.onrender.com",
+  "http://localhost:5173",
+  "https://steven0710.github.io/Job-Tracker/",
 ];
 
 app.use(
