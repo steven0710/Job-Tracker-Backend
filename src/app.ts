@@ -1,8 +1,20 @@
 import express from "express";
+import cors from "cors";
 import userRouter from "./routes/user.route";
 import jobRouter from "./routes/job.route";
 const app = express(); // create an express app
 
+const allowedOrigins = [
+  "http://localhost:5000",
+  "https://job-tracker-steven0710.onrender.com",
+];
+
+app.use(
+  cors({
+    origin: allowedOrigins, // frontend URL
+    credentials: true,
+  }),
+);
 app.get("/", (_req, res) => {
   res.status(200).send("OK");
 });
