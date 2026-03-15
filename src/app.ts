@@ -6,7 +6,7 @@ const app = express(); // create an express app
 
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://steven0710.github.io/Job-Tracker",
+  "https://steven0710.github.io",
 ];
 
 app.use(
