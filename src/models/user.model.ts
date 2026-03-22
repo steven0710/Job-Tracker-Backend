@@ -11,15 +11,8 @@ const userSchema = new Schema<UserDocument>(
   {
     username: {
       type: String,
-      required: true,
       lowercase: true,
       trim: true,
-      minLength: 1,
-      maxLength: 30,
-    },
-    password: {
-      type: String,
-      required: true,
       minLength: 1,
       maxLength: 30,
     },
@@ -31,6 +24,12 @@ const userSchema = new Schema<UserDocument>(
       trim: true,
       minLength: 5,
       maxLength: 50,
+    },
+    password: {
+      type: String,
+      required: true,
+      minLength: 1,
+      maxLength: 30,
     },
   },
   { timestamps: true },
