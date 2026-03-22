@@ -22,12 +22,16 @@ const registerUser = async (req: Request, res: Response) => {
       ...parsed.data,
       email,
     });
-
+    const JWT_SECRET = process.env.JWT_SECRET as string;
+    const token = jwt.sign({ userId: user._id }, JWT_SECRET, {
+      expiresIn: "1d",
+    });
     res.status(201).json({
       message: "User registered successfully",
       id: user._id,
       email: user.email,
       username: user.username,
+      token: token,
     });
   } catch (error) {
     console.error(`Error: ${error}`);
