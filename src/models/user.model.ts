@@ -2,7 +2,7 @@ import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcrypt";
 
 export interface UserDocument extends mongoose.Document {
-  username: string;
+  username?: string;
   password: string;
   email: string;
   comparePasswords(candidatePassword: string): Promise<boolean>;
