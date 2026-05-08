@@ -8,7 +8,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "https://steven0710.github.io",
   "https://job-tracker-nre4.onrender.com",
-  "https://job-tracker-staging-nre4.onrender.com",
+  "https://job-tracker-staging.onrender.com",
 ];
 
 app.use(
