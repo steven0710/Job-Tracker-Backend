@@ -38,7 +38,9 @@ export const getAllJobs = async (req: AuthRequest, res: Response) => {
     if (!req.user?.userId) {
       return res.status(401).json({ message: "Not authorized" });
     }
-    const jobs = await Job.find({ userId: req.user.userId });
+    const jobs = await Job.find({ userId: req.user.userId }).sort({
+      createdAt: -1,
+    }); // Sort by most recent
     return res.status(200).json({ message: "Jobs retrieved", jobs: jobs });
   } catch (err) {
     console.error(err);
