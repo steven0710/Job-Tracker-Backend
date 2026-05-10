@@ -5,6 +5,9 @@ export interface UserDocument extends mongoose.Document {
   username?: string;
   password: string;
   email: string;
+  isVerified: boolean;
+  verificationToken?: string;
+  verificationTokenExpires?: Date;
   comparePasswords(candidatePassword: string): Promise<boolean>;
 }
 const userSchema = new Schema<UserDocument>(
@@ -28,9 +31,10 @@ const userSchema = new Schema<UserDocument>(
     password: {
       type: String,
       required: true,
-      minLength: 1,
-      maxLength: 30,
     },
+    isVerified: { type: Boolean, default: false },
+    verificationToken: { type: String },
+    verificationTokenExpires: { type: Date },
   },
   { timestamps: true },
 );

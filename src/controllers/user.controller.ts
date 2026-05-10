@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { User } from "../models/user.model";
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
@@ -5,6 +6,7 @@ import {
   loginUserSchema,
   registerUserSchema,
 } from "../validators/user.validator";
+import { sendVerificationEmail } from "../services/email.service";
 const registerUser = async (req: Request, res: Response) => {
   try {
     const parsed = registerUserSchema.safeParse(req.body);
@@ -18,21 +20,55 @@ const registerUser = async (req: Request, res: Response) => {
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
-    const user = await User.create({
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    await User.create({
       ...parsed.data,
       email,
+      verificationToken,
+      verificationTokenExpires,
     });
-    const JWT_SECRET = process.env.JWT_SECRET as string;
-    const token = jwt.sign({ userId: user._id }, JWT_SECRET, {
-      expiresIn: "1d",
-    });
+    await sendVerificationEmail(email, verificationToken);
+    // const JWT_SECRET = process.env.JWT_SECRET as string;
+    // const token = jwt.sign({ userId: user._id }, JWT_SECRET, {
+    //   expiresIn: "1d",
+    // });
     res.status(201).json({
-      message: "User registered successfully",
-      id: user._id,
-      email: user.email,
-      username: user.username,
-      token: token,
+      message:
+        "Registration successful. Please check your email to verify your account.",
     });
+  } catch (error) {
+    console.error(`Error: ${error}`);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const verifyEmail = async (req: Request, res: Response) => {
+  try {
+    const { token } = req.query;
+
+    if (!token || typeof token !== "string") {
+      return res.status(400).json({ message: "Invalid token" });
+    }
+
+    const user = await User.findOne({
+      verificationToken: token,
+      verificationTokenExpires: { $gt: new Date() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
+
+    user.isVerified = true;
+    user.verificationToken = undefined;
+    user.verificationTokenExpires = undefined;
+    await user.save();
+
+    res
+      .status(200)
+      .json({ message: "Email verified successfully. You can now log in." });
   } catch (error) {
     console.error(`Error: ${error}`);
     res.status(500).json({ message: "Server error" });
@@ -62,7 +98,11 @@ const loginUser = async (req: Request, res: Response) => {
     if (!isPasswordValid) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
-
+    if (!user.isVerified) {
+      return res
+        .status(403)
+        .json({ message: "Please verify your email before logging in." });
+    }
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, {
       expiresIn: "1d",
     });
@@ -77,4 +117,4 @@ const loginUser = async (req: Request, res: Response) => {
   }
 };
 
-export { registerUser, loginUser };
+export { registerUser, loginUser, verifyEmail };
