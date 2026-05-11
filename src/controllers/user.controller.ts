@@ -75,6 +75,35 @@ const verifyEmail = async (req: Request, res: Response) => {
   }
 };
 
+const resendVerificationEmail = async (req: Request, res: Response) => {
+  try {
+    const email = (req.body.email as string).toLowerCase();
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ message: "Email is already verified" });
+    }
+
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    user.verificationToken = verificationToken;
+    user.verificationTokenExpires = verificationTokenExpires;
+    await user.save();
+
+    await sendVerificationEmail(email, verificationToken);
+
+    res.status(200).json({ message: "Verification email sent successfully" });
+  } catch (error) {
+    console.error(`Error: ${error}`);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 const loginUser = async (req: Request, res: Response) => {
   try {
     const parsed = loginUserSchema.safeParse(req.body);
@@ -117,4 +146,4 @@ const loginUser = async (req: Request, res: Response) => {
   }
 };
 
-export { registerUser, loginUser, verifyEmail };
+export { registerUser, loginUser, verifyEmail, resendVerificationEmail };
