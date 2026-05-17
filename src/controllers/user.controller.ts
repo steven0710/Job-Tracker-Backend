@@ -3,10 +3,13 @@ import { User } from "../models/user.model";
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import {
+  emailSchema,
   loginUserSchema,
   registerUserSchema,
+  resetPasswordSchema,
 } from "../validators/user.validator";
-import { sendVerificationEmail } from "../services/email.service";
+import { sendVerificationEmail, sendForgotPasswordEmail } from "../services/email.service";
+import { createUser } from "../services/user.service";
 const registerUser = async (req: Request, res: Response) => {
   try {
     const parsed = registerUserSchema.safeParse(req.body);
@@ -15,25 +18,15 @@ const registerUser = async (req: Request, res: Response) => {
         .status(400)
         .json({ message: "Validation failed", issues: parsed.error.issues });
     }
-    const email = parsed.data.email.toLowerCase();
+    const { email, password } = parsed.data;
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
-    const verificationToken = crypto.randomBytes(32).toString("hex");
-    const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    await User.create({
-      ...parsed.data,
-      email,
-      verificationToken,
-      verificationTokenExpires,
-    });
-    await sendVerificationEmail(email, verificationToken);
-    // const JWT_SECRET = process.env.JWT_SECRET as string;
-    // const token = jwt.sign({ userId: user._id }, JWT_SECRET, {
-    //   expiresIn: "1d",
-    // });
+    const token = await createUser(email, password);
+    await sendVerificationEmail(email, token);
+
     res.status(201).json({
       message:
         "Registration successful. Please check your email to verify your account.",
@@ -44,7 +37,77 @@ const registerUser = async (req: Request, res: Response) => {
   }
 };
 
-const verifyEmail = async (req: Request, res: Response) => {
+const forgotPassword = async (req: Request, res: Response) => {
+  try {
+    const parsed = emailSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json({ message: "Validation failed", issues: parsed.error.issues });
+    }
+    const email = parsed.data.email;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res
+        .status(200)
+        .json({ message: "If that email exists, a reset link has been sent." });
+    }
+
+    const passwordVerificationToken = crypto.randomBytes(32).toString("hex");
+    const passwordVerificationTokenExpires = new Date(
+      Date.now() + 24 * 60 * 60 * 1000,
+    ); // 24 hours
+
+    user.passwordResetToken = passwordVerificationToken;
+    user.passwordResetTokenExpires = passwordVerificationTokenExpires;
+    await user.save();
+
+    await sendForgotPasswordEmail(user.email, passwordVerificationToken);
+
+    res
+      .status(200)
+      .json({ message: "If that email exists, a reset link has been sent." });
+  } catch (error) {
+    console.error(`Error: ${error}`);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const resetPassword = async (req: Request, res: Response) => {
+  try {
+    const { token } = req.query;
+    if (!token || typeof token !== "string") {
+      return res.status(400).json({ message: "Invalid token" });
+    }
+    const parsed = resetPasswordSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json({ message: "Validation failed", issues: parsed.error.issues });
+    }
+    const { newPassword } = parsed.data;
+
+    const user = await User.findOne({
+      passwordResetToken: token,
+      passwordResetTokenExpires: { $gt: new Date() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
+
+    user.passwordResetToken = undefined;
+    user.passwordResetTokenExpires = undefined;
+    user.password = newPassword;
+    await user.save();
+    res.status(200).json({ message: "Password reset successfully." });
+  } catch (error) {
+    console.error(`Error: ${error}`);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+const verifyRegistration = async (req: Request, res: Response) => {
   try {
     const { token } = req.query;
 
@@ -65,23 +128,28 @@ const verifyEmail = async (req: Request, res: Response) => {
     user.verificationToken = undefined;
     user.verificationTokenExpires = undefined;
     await user.save();
-
-    res
-      .status(200)
-      .json({ message: "Email verified successfully. You can now log in." });
+    res.status(200).json({ message: "Email verified successfully." });
   } catch (error) {
     console.error(`Error: ${error}`);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-const resendVerificationEmail = async (req: Request, res: Response) => {
+const resendRegistrationVerification = async (req: Request, res: Response) => {
   try {
-    const email = (req.body.email as string).toLowerCase();
+    const parsed = emailSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json({ message: "Validation failed", issues: parsed.error.issues });
+    }
+    const email = parsed.data.email;
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res
+        .status(200)
+        .json({ message: "Verification email sent successfully" });
     }
 
     if (user.isVerified) {
@@ -117,7 +185,7 @@ const loginUser = async (req: Request, res: Response) => {
     if (!JWT_SECRET) {
       return res.status(500).json({ message: "Server misconfigured" });
     }
-    const email = parsed.data.email.toLowerCase();
+    const email = parsed.data.email;
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: "Invalid email or password" });
@@ -146,4 +214,11 @@ const loginUser = async (req: Request, res: Response) => {
   }
 };
 
-export { registerUser, loginUser, verifyEmail, resendVerificationEmail };
+export {
+  registerUser,
+  loginUser,
+  verifyRegistration,
+  resendRegistrationVerification,
+  forgotPassword,
+  resetPassword,
+};

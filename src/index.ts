@@ -1,8 +1,6 @@
-import dotenv from "dotenv";
+import "dotenv/config";
 import app from "./app";
 import { connectDB } from "./config/db";
-
-dotenv.config();
 const startServer = async () => {
   try {
     // 1️⃣ Connect to MongoDB

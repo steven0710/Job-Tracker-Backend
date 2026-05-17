@@ -8,6 +8,8 @@ export interface UserDocument extends mongoose.Document {
   isVerified: boolean;
   verificationToken?: string;
   verificationTokenExpires?: Date;
+  passwordResetToken?: string;
+  passwordResetTokenExpires?: Date;
   comparePasswords(candidatePassword: string): Promise<boolean>;
 }
 const userSchema = new Schema<UserDocument>(
@@ -16,8 +18,6 @@ const userSchema = new Schema<UserDocument>(
       type: String,
       lowercase: true,
       trim: true,
-      minLength: 1,
-      maxLength: 30,
     },
     email: {
       type: String,
@@ -25,8 +25,6 @@ const userSchema = new Schema<UserDocument>(
       unique: true,
       lowercase: true,
       trim: true,
-      minLength: 5,
-      maxLength: 50,
     },
     password: {
       type: String,
@@ -35,6 +33,8 @@ const userSchema = new Schema<UserDocument>(
     isVerified: { type: Boolean, default: false },
     verificationToken: { type: String },
     verificationTokenExpires: { type: Date },
+    passwordResetToken: { type: String },
+    passwordResetTokenExpires: { type: Date },
   },
   { timestamps: true },
 );

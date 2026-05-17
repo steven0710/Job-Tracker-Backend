@@ -23,7 +23,5 @@ app.get("/", (_req, res) => {
 app.use(express.json());
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/jobs", jobRouter); // add job routes
-// app.use("/api/v1/post", userRouter);
-console.log("hello");
-//https://localhost:5000/api/v1/users/register
+
 export default app;

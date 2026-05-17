@@ -110,8 +110,6 @@ export const deleteJob = async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ message: "Not authorized" });
     }
 
-    // console.log(req.params.id);
-    // console.log(req.user.userId);
     const deleteJob = await Job.findOneAndDelete({
       _id: req.params.id,
       userId: req.user.userId, // Ensure the job belongs to the authenticated user

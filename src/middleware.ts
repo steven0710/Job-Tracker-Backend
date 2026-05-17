@@ -10,10 +10,6 @@ export const authMiddleware = (
   const JWT_SECRET = process.env.JWT_SECRET as string;
   const token = req.headers.authorization?.split(" ")[1]; // Bearer <token>
 
-  // console.log("Authorization header:", req.headers.authorization);
-  // console.log("Extracted token:", token);
-  // console.log("JWT_SECRET:", JWT_SECRET);
-
   if (!JWT_SECRET) {
     return res.status(500).json({ message: "Server misconfigured" });
   }
