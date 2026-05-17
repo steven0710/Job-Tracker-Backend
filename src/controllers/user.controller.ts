@@ -8,7 +8,10 @@ import {
   registerUserSchema,
   resetPasswordSchema,
 } from "../validators/user.validator";
-import { sendVerificationEmail, sendForgotPasswordEmail } from "../services/email.service";
+import {
+  sendVerificationEmail,
+  sendForgotPasswordEmail,
+} from "../services/email.service";
 import { createUser } from "../services/user.service";
 const registerUser = async (req: Request, res: Response) => {
   try {
@@ -86,7 +89,7 @@ const resetPassword = async (req: Request, res: Response) => {
         .status(400)
         .json({ message: "Validation failed", issues: parsed.error.issues });
     }
-    const { newPassword } = parsed.data;
+    const { password } = parsed.data;
 
     const user = await User.findOne({
       passwordResetToken: token,
@@ -99,7 +102,7 @@ const resetPassword = async (req: Request, res: Response) => {
 
     user.passwordResetToken = undefined;
     user.passwordResetTokenExpires = undefined;
-    user.password = newPassword;
+    user.password = password;
     await user.save();
     res.status(200).json({ message: "Password reset successfully." });
   } catch (error) {

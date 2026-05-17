@@ -23,7 +23,7 @@ export const loginUserSchema = z
 
 export const resetPasswordSchema = z
   .object({
-    newPassword: z
+    password: z
       .string()
       .min(6, "Password must be at least 6 characters")
       .max(30, "Password must not exceed 30 characters"),
