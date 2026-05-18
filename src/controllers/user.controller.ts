@@ -8,18 +8,13 @@ import {
   registerUserSchema,
   resetPasswordSchema,
 } from "../validators/user.validator";
-import {
-  sendVerificationEmail,
-  sendForgotPasswordEmail,
-} from "../services/email.service";
+import { sendVerificationEmail, sendForgotPasswordEmail } from "../services/email.service";
 import { createUser } from "../services/user.service";
 const registerUser = async (req: Request, res: Response) => {
   try {
     const parsed = registerUserSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res
-        .status(400)
-        .json({ message: "Validation failed", issues: parsed.error.issues });
+      return res.status(400).json({ message: "Validation failed", issues: parsed.error.issues });
     }
     const { email, password } = parsed.data;
     const existingUser = await User.findOne({ email });
@@ -31,8 +26,7 @@ const registerUser = async (req: Request, res: Response) => {
     await sendVerificationEmail(email, token);
 
     res.status(201).json({
-      message:
-        "Registration successful. Please check your email to verify your account.",
+      message: "Registration successful. Please check your email to verify your account.",
     });
   } catch (error) {
     console.error(`Error: ${error}`);
@@ -44,23 +38,17 @@ const forgotPassword = async (req: Request, res: Response) => {
   try {
     const parsed = emailSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res
-        .status(400)
-        .json({ message: "Validation failed", issues: parsed.error.issues });
+      return res.status(400).json({ message: "Validation failed", issues: parsed.error.issues });
     }
     const email = parsed.data.email;
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res
-        .status(200)
-        .json({ message: "If that email exists, a reset link has been sent." });
+      return res.status(200).json({ message: "If that email exists, a reset link has been sent." });
     }
 
     const passwordVerificationToken = crypto.randomBytes(32).toString("hex");
-    const passwordVerificationTokenExpires = new Date(
-      Date.now() + 24 * 60 * 60 * 1000,
-    ); // 24 hours
+    const passwordVerificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
     user.passwordResetToken = passwordVerificationToken;
     user.passwordResetTokenExpires = passwordVerificationTokenExpires;
@@ -68,9 +56,7 @@ const forgotPassword = async (req: Request, res: Response) => {
 
     await sendForgotPasswordEmail(user.email, passwordVerificationToken);
 
-    res
-      .status(200)
-      .json({ message: "If that email exists, a reset link has been sent." });
+    res.status(200).json({ message: "If that email exists, a reset link has been sent." });
   } catch (error) {
     console.error(`Error: ${error}`);
     res.status(500).json({ message: "Server error" });
@@ -85,9 +71,7 @@ const resetPassword = async (req: Request, res: Response) => {
     }
     const parsed = resetPasswordSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res
-        .status(400)
-        .json({ message: "Validation failed", issues: parsed.error.issues });
+      return res.status(400).json({ message: "Validation failed", issues: parsed.error.issues });
     }
     const { password } = parsed.data;
 
@@ -142,17 +126,13 @@ const resendRegistrationVerification = async (req: Request, res: Response) => {
   try {
     const parsed = emailSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res
-        .status(400)
-        .json({ message: "Validation failed", issues: parsed.error.issues });
+      return res.status(400).json({ message: "Validation failed", issues: parsed.error.issues });
     }
     const email = parsed.data.email;
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res
-        .status(200)
-        .json({ message: "Verification email sent successfully" });
+      return res.status(200).json({ message: "Verification email sent successfully" });
     }
 
     if (user.isVerified) {
@@ -179,9 +159,7 @@ const loginUser = async (req: Request, res: Response) => {
   try {
     const parsed = loginUserSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res
-        .status(400)
-        .json({ message: "Validation failed", issues: parsed.error.issues });
+      return res.status(400).json({ message: "Validation failed", issues: parsed.error.issues });
     }
 
     const JWT_SECRET = process.env.JWT_SECRET as string;
@@ -199,9 +177,7 @@ const loginUser = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Invalid email or password" });
     }
     if (!user.isVerified) {
-      return res
-        .status(403)
-        .json({ message: "Please verify your email before logging in." });
+      return res.status(403).json({ message: "Please verify your email before logging in." });
     }
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, {
       expiresIn: "1d",

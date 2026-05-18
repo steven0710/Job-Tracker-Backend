@@ -2,11 +2,7 @@ import { Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { AuthRequest } from "./types/auth-request";
 
-export const authMiddleware = (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction,
-) => {
+export const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
   const JWT_SECRET = process.env.JWT_SECRET as string;
   const token = req.headers.authorization?.split(" ")[1]; // Bearer <token>
 
